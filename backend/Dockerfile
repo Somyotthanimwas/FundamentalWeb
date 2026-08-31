@@ -6,7 +6,8 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         g++ \
         libboost-dev \
-        ca-certificates && \
+        ca-certificates \
+        curl && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

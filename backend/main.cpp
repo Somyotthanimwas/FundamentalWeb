@@ -14,6 +14,9 @@
 #include <utility>
 #include <mutex>
 #include <cctype>
+#include <thread>
+#include <chrono>
+#include <ctime>
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -294,6 +297,104 @@ void reloadIfChanged(
     }
 }
 
+
+bool syncCsvFromGitHub(
+    const std::string& csv
+) {
+    const std::string tmp = csv + ".github_tmp";
+
+    const std::string url =
+        "https://raw.githubusercontent.com/"
+        "Somyotthanimwas/FundamentalWeb/main/"
+        "data/fundamental_v4.csv?v=" +
+        std::to_string(
+            static_cast<long long>(std::time(nullptr))
+        );
+
+    const std::string command =
+        "curl -fsSL --max-time 20 "
+        "-A 'FundamentalWeb-Cpp' "
+        "'" + url + "' "
+        "-o '" + tmp + "'";
+
+    const int result = std::system(command.c_str());
+
+    if (result != 0) {
+        std::cerr
+            << "GITHUB SYNC: download failed\n";
+        std::remove(tmp.c_str());
+        return false;
+    }
+
+    try {
+        auto newStocks = loadStocks(tmp);
+
+        if (newStocks.empty()) {
+            std::cerr
+                << "GITHUB SYNC: downloaded CSV is empty\n";
+            std::remove(tmp.c_str());
+            return false;
+        }
+
+        if (newStocks.size() != 869) {
+            std::cerr
+                << "GITHUB SYNC: invalid stock count: "
+                << newStocks.size()
+                << "\n";
+            std::remove(tmp.c_str());
+            return false;
+        }
+
+        std::error_code error;
+
+        std::filesystem::copy_file(
+            tmp,
+            csv,
+            std::filesystem::copy_options::overwrite_existing,
+            error
+        );
+
+        std::remove(tmp.c_str());
+
+        if (error) {
+            std::cerr
+                << "GITHUB SYNC: cannot update local CSV: "
+                << error.message()
+                << "\n";
+            return false;
+        }
+
+        std::cout
+            << "GITHUB SYNC: CSV updated from GitHub. "
+            << "Stocks: "
+            << newStocks.size()
+            << "\n";
+
+        return true;
+
+    } catch (const std::exception& error) {
+        std::cerr
+            << "GITHUB SYNC: CSV validation failed: "
+            << error.what()
+            << "\n";
+
+        std::remove(tmp.c_str());
+        return false;
+    }
+}
+
+void githubSyncLoop(
+    const std::string& csv
+) {
+    for (;;) {
+        std::this_thread::sleep_for(
+            std::chrono::seconds(30)
+        );
+
+        syncCsvFromGitHub(csv);
+    }
+}
+
 http::response<http::string_body> handleRequest(
     const http::request<http::string_body>& request,
     std::vector<Stock>& stocks,
@@ -516,7 +617,15 @@ int main() {
             << "0.0.0.0:"
             << port
             << "\n"
-            << "Auto Reload: ENABLED\n";
+            << "Auto Reload: ENABLED\n"
+            << "GitHub CSV Sync: ENABLED (30s)\n";
+
+        std::thread githubThread(
+            githubSyncLoop,
+            csv
+        );
+
+        githubThread.detach();
 
         for (;;) {
             tcp::socket socket{io_context};
