@@ -304,16 +304,14 @@ bool syncCsvFromGitHub(
     const std::string tmp = csv + ".github_tmp";
 
     const std::string url =
-        "https://raw.githubusercontent.com/"
-        "Somyotthanimwas/FundamentalWeb/main/"
-        "data/fundamental_v4.csv?v=" +
-        std::to_string(
-            static_cast<long long>(std::time(nullptr))
-        );
+        "https://api.github.com/repos/"
+        "Somyotthanimwas/FundamentalWeb/"
+        "contents/data/fundamental_v4.csv?ref=main";
 
     const std::string command =
         "curl -fsSL --max-time 20 "
         "-A 'FundamentalWeb-Cpp' "
+        "-H 'Accept: application/vnd.github.raw+json' "
         "'" + url + "' "
         "-o '" + tmp + "'";
 
