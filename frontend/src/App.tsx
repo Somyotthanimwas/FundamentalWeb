@@ -86,7 +86,7 @@ function App() {
         setLoading(true)
         setError('')
 
-        const response = await fetch('/api/stocks')
+        const response = await fetch('https://fundamentalweb.onrender.com/api/stocks')
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`)
