@@ -23,3 +23,7 @@ Thumbs.db
 ~FundamentalWebbackend.txt
 *_backup
 *_backup.*
+
+# V4 CSV watcher runtime files
+tools/v4_watch.log
+tools/v4_watch.pid
