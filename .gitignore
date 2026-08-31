@@ -1,0 +1,25 @@
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Backend runtime
+backend/backend.log
+backend/backend.pid
+
+# Local/build executable
+backend/fundamental_backend
+
+# Backup files
+*.backup
+*.before_*
+*.dashboard_backup
+*.vite_backup
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+~FundamentalWebbackend.txt
+*_backup
+*_backup.*
