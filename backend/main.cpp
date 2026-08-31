@@ -462,8 +462,7 @@ http::response<http::string_body> handleRequest(
 
 int main() {
     const std::string csv =
-        "/mnt/c/Program Files/FundamentalUpdater_rev4/"
-        "Data/Fundamental/fundamental_v4.csv";
+        "data/fundamental_v4.csv";
 
     try {
         std::cout
@@ -500,7 +499,9 @@ int main() {
         const auto address =
             net::ip::make_address("0.0.0.0");
 
-        constexpr unsigned short port = 8080;
+        const char* envPort = std::getenv("PORT");
+        const unsigned short port =
+            envPort ? static_cast<unsigned short>(std::stoi(envPort)) : 8080;
 
         net::io_context io_context{1};
 
