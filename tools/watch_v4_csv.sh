@@ -2,6 +2,7 @@
 
 SOURCE="/mnt/c/Program Files/FundamentalUpdater_rev4/Data/Fundamental/fundamental_v4.csv"
 SYNC="$HOME/FundamentalWeb/tools/sync_v4_csv.sh"
+WATCH_DIR="$(dirname "$SOURCE")"
 
 echo "===== V4 CSV AUTO WATCH ====="
 echo "Watching:"
@@ -18,22 +19,28 @@ echo "Initial sync..."
 
 echo
 echo "Waiting for V4 CSV changes..."
+echo "Setting up watch..."
 
-inotifywait -m \
-    -e close_write \
-    -e moved_to \
-    -e create \
-    "$(dirname "$SOURCE")" |
-while read -r directory event filename; do
+while true; do
 
-    if [ "$filename" = "fundamental_v4.csv" ]; then
+    EVENT=$(inotifywait -q \
+        -e close_write \
+        -e moved_to \
+        -e create \
+        "$WATCH_DIR" 2>/dev/null)
+
+    FILE=$(echo "$EVENT" | awk '{print $3}')
+
+    if [ "$FILE" = "fundamental_v4.csv" ]; then
+
         echo
         echo "===== V4 CSV CHANGE DETECTED ====="
         date
 
-        sleep 1
+        sleep 2
 
         "$SYNC"
+
     fi
 
 done
