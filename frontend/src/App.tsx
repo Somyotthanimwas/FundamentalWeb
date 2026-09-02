@@ -397,6 +397,7 @@ function App() {
                   <th>Symbol</th>
                   <th>Price</th>
                   <th>Change</th>
+                  <th>Volume</th>
                   <th>P/E</th>
                   <th>P/BV</th>
                   <th>ROE</th>
@@ -432,6 +433,12 @@ function App() {
                     >
                       {stock.percentChange !== ''
                         ? `${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%`
+                        : '—'}
+                    </td>
+
+                    <td className="number volume">
+                      {stock.volume !== '' && Number.isFinite(Number(stock.volume))
+                        ? Number(stock.volume).toLocaleString('en-US')
                         : '—'}
                     </td>
 
@@ -471,7 +478,7 @@ function App() {
 
                 {!loading && filteredStocks.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="empty">
+                    <td colSpan={10} className="empty">
                       No stocks found.
                     </td>
                   </tr>
