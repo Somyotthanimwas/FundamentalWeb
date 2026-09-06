@@ -501,7 +501,7 @@ int main() {
 
 const std::string csv =
     "/mnt/c/Program Files/FundamentalUpdater_rev5/"
-    "Data/Fundamental/fundamental_v4.csv";
+    "/app/data/fundamental_v4.csv";
 
 try {
     std::cout
