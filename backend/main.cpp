@@ -500,7 +500,6 @@ int main() {
 // ============================================================
 
 const std::string csv =
-    "/mnt/c/Program Files/FundamentalUpdater_rev5/"
     "/app/data/fundamental_v4.csv";
 
 try {
