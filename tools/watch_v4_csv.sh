@@ -1,46 +1,29 @@
 #!/bin/bash
 
-SOURCE="/mnt/c/Program Files/FundamentalUpdater_rev4/Data/Fundamental/fundamental_v4.csv"
+SOURCE="/mnt/c/Program Files/FundamentalUpdater_rev5/Data/Fundamental/fundamental_v4.csv"
 SYNC="$HOME/FundamentalWeb/tools/sync_v4_csv.sh"
-WATCH_DIR="$(dirname "$SOURCE")"
-
-echo "===== V4 CSV AUTO WATCH ====="
-echo "Watching:"
-echo "$SOURCE"
-echo
-
-if [ ! -f "$SOURCE" ]; then
-    echo "ERROR: V4 CSV not found"
-    exit 1
-fi
-
-echo "Initial sync..."
-"$SYNC"
-
-echo
-echo "Waiting for V4 CSV changes..."
-echo "Setting up watch..."
 
 while true; do
-
-    EVENT=$(inotifywait -q \
-        -e close_write \
-        -e moved_to \
-        -e create \
-        "$WATCH_DIR" 2>/dev/null)
-
-    FILE=$(echo "$EVENT" | awk '{print $3}')
-
-    if [ "$FILE" = "fundamental_v4.csv" ]; then
-
-        echo
-        echo "===== V4 CSV CHANGE DETECTED ====="
-        date
-
-        sleep 2
-
-        "$SYNC"
-
+    if [ ! -f "$SOURCE" ]; then
+        echo "ERROR: V5 V4 CSV not found"
+        sleep 5
+        continue
     fi
 
+    CURRENT_HASH=$(sha256sum "$SOURCE" | awk '{print $1}')
+
+    if [ "$CURRENT_HASH" != "${LAST_HASH:-}" ]; then
+        echo
+        echo "===== V4 CSV CONTENT CHANGE DETECTED ====="
+        date
+        echo "SHA256: $CURRENT_HASH"
+
+        if "$SYNC"; then
+            LAST_HASH="$CURRENT_HASH"
+        else
+            echo "SYNC FAILED - will retry on next check"
+        fi
+    fi
+
+    sleep 2
 done
