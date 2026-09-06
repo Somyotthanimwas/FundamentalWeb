@@ -86,7 +86,8 @@ function App() {
         setLoading(true)
         setError('')
 
-        const response = await fetch('https://fundamentalweb.onrender.com/api/stocks')
+        const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+        const response = await fetch(`${API_BASE_URL}/api/stocks`)
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`)
