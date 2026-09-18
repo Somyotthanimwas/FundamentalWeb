@@ -309,6 +309,86 @@ try {
 
 }
 
+
+void syncGithubCsv(
+const std::string& csv
+) {
+    const std::string url =
+        "https://raw.githubusercontent.com/"
+        "Somyotthanimwas/FundamentalWeb/main/"
+        "data/fundamental_v4.csv";
+
+    const std::string tmp = csv + ".github.tmp";
+
+    const std::string command =
+        "curl -fsSL --max-time 15 "
+        "-A \"FundamentalWeb/1.0\" "
+        "-o \"" + tmp + "\" "
+        "\"" + url + "\"";
+
+    const int result = std::system(command.c_str());
+
+    if (result != 0) {
+        std::remove(tmp.c_str());
+        std::cerr
+            << "GITHUB CSV SYNC FAILED: curl exit "
+            << result
+            << "\n";
+        return;
+    }
+
+    try {
+        auto newStocks = loadStocks(tmp);
+
+        if (newStocks.empty()) {
+            std::cerr
+                << "GITHUB CSV SYNC FAILED: CSV is empty\n";
+            std::remove(tmp.c_str());
+            return;
+        }
+
+        bool hasAot = false;
+        for (const auto& stock : newStocks) {
+            if (stock.symbol == "AOT") {
+                hasAot = true;
+                break;
+            }
+        }
+
+        if (!hasAot) {
+            std::cerr
+                << "GITHUB CSV SYNC FAILED: AOT not found\n";
+            std::remove(tmp.c_str());
+            return;
+        }
+
+        std::error_code error;
+        std::filesystem::rename(tmp, csv, error);
+
+        if (error) {
+            std::cerr
+                << "GITHUB CSV SYNC FAILED: rename: "
+                << error.message()
+                << "\n";
+            std::remove(tmp.c_str());
+            return;
+        }
+
+        std::cout
+            << "GITHUB CSV SYNC OK: stocks="
+            << newStocks.size()
+            << "\n";
+
+    } catch (const std::exception& error) {
+        std::cerr
+            << "GITHUB CSV SYNC FAILED: "
+            << error.what()
+            << "\n";
+        std::remove(tmp.c_str());
+    }
+}
+
+
 http::response<http::string_body> handleRequest(
 const http::request<http::string_body>& request,
 std::vector<Stock>& stocks,
@@ -558,6 +638,28 @@ try {
         << "CSV Source: C:\\Program Files\\FundamentalUpdater_rev5\\Data\\Fundamental\\fundamental_v4.csv\n"
         << "Auto Reload: ENABLED\n"
         << "GitHub CSV Sync: DISABLED\n";
+
+    // ============================================================
+    // BACKGROUND GITHUB CSV SYNC
+    // Download the latest GitHub CSV every 30 seconds.
+    // The file is replaced atomically; the CSV watcher below
+    // detects the change and reloads the in-memory data.
+    // ============================================================
+    std::thread githubSync(
+        [&]() {
+            syncGithubCsv(csv);
+
+            while (true) {
+                std::this_thread::sleep_for(
+                    std::chrono::seconds(30)
+                );
+
+                syncGithubCsv(csv);
+            }
+        }
+    );
+
+    githubSync.detach();
 
     // ============================================================
     // BACKGROUND CSV WATCHER
