@@ -4,6 +4,7 @@
 #include <boost/asio/ip/tcp.hpp>
 
 #include <cstdlib>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -562,21 +563,11 @@ int main() {
 
 
 // ============================================================
-// FUNDAMENTALWEB SOURCE OF TRUTH
+// FUNDAMENTALWEB CSV
 // ============================================================
-//
-// Windows:
-//
-// C:\Program Files\FundamentalUpdater_rev5\
-//     Data\Fundamental\fundamental_v4.csv
-//
-// WSL:
-//
-// /mnt/c/Program Files/FundamentalUpdater_rev5/
-//     Data/Fundamental/fundamental_v4.csv
-//
-// FundamentalWeb reads this file directly.
-// No GitHub CSV synchronization.
+// Render keeps a local copy of the CSV inside the container.
+// A background sync downloads the latest GitHub CSV every
+// 30 seconds. The CSV watcher reloads changed data.
 // ============================================================
 
 const std::string csv =
@@ -637,7 +628,7 @@ try {
         << "\n"
         << "CSV Source: C:\\Program Files\\FundamentalUpdater_rev5\\Data\\Fundamental\\fundamental_v4.csv\n"
         << "Auto Reload: ENABLED\n"
-        << "GitHub CSV Sync: DISABLED\n";
+        << "GitHub CSV Sync: ENABLED (30 sec)\n";
 
     // ============================================================
     // BACKGROUND GITHUB CSV SYNC
