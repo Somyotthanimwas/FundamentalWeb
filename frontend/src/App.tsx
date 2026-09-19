@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://fundamentalweb-backend.onrender.com'
+
 type ApiStock = {
   symbol: string
   last: string
@@ -86,7 +88,6 @@ function App() {
         setLoading(true)
         setError('')
 
-        const API_BASE_URL = import.meta.env.VITE_API_URL || ''
         const response = await fetch(`${API_BASE_URL}/api/stocks`)
 
         if (!response.ok) {
