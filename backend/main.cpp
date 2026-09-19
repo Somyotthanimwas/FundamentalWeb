@@ -401,24 +401,28 @@ if (request.method() == http::verb::post &&
             );
         }
 
+        const std::string uploadedAotLast = aotIt->last;
+        const std::string uploadedAotVolume = aotIt->volume;
+        const std::size_t uploadedStocks = newStocks.size();
+
         {
             std::lock_guard<std::mutex> lock(dataMutex);
             stocks = std::move(newStocks);
         }
 
         std::cout
-            << "DIRECT CSV UPLOAD: stocks=" << stocks.size()
-            << ", AOT last=" << aotIt->last
-            << ", volume=" << aotIt->volume
+            << "DIRECT CSV UPLOAD: stocks=" << uploadedStocks
+            << ", AOT last=" << uploadedAotLast
+            << ", volume=" << uploadedAotVolume
             << "\n";
 
         std::ostringstream body;
         body
             << "{"
             << "\"status\":\"ok\","
-            << "\"stocks\":" << stocks.size() << ","
-            << "\"aotLast\":\"" << escapeJson(aotIt->last) << "\","
-            << "\"aotVolume\":\"" << escapeJson(aotIt->volume) << "\""
+            << "\"stocks\":" << uploadedStocks << ","
+            << "\"aotLast\":\"" << escapeJson(uploadedAotLast) << "\","
+            << "\"aotVolume\":\"" << escapeJson(uploadedAotVolume) << "\""
             << "}";
 
         return makeResponse(
