@@ -415,11 +415,25 @@ if (request.target() == "/api/health") {
 
     std::ostringstream body;
 
+    std::string aotLast;
+    std::string aotVolume;
+    const auto aotIt = std::find_if(
+        stocks.begin(),
+        stocks.end(),
+        [](const Stock& stock) { return stock.symbol == "AOT"; }
+    );
+    if (aotIt != stocks.end()) {
+        aotLast = aotIt->last;
+        aotVolume = aotIt->volume;
+    }
+
     body
         << "{"
         << "\"status\":\"ok\","
         << "\"service\":\"FundamentalWeb Backend\","
-        << "\"stocks\":" << stocks.size()
+        << "\"stocks\":" << stocks.size() << ","
+        << "\"aotLast\":\"" << escapeJson(aotLast) << "\","
+        << "\"aotVolume\":\"" << escapeJson(aotVolume) << "\""
         << "}";
 
     return makeResponse(
@@ -517,6 +531,18 @@ try {
         << "Stocks loaded: "
         << stocks.size()
         << "\n";
+
+    const auto startupAot = std::find_if(
+        stocks.begin(),
+        stocks.end(),
+        [](const Stock& stock) { return stock.symbol == "AOT"; }
+    );
+    if (startupAot != stocks.end()) {
+        std::cout
+            << "AOT CHECK: last=" << startupAot->last
+            << ", volume=" << startupAot->volume
+            << "\n";
+    }
 
     std::error_code fileError;
 
