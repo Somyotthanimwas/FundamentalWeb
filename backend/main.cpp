@@ -237,16 +237,6 @@ response.set(
 );
 
 response.set(
-    http::field::cache_control,
-    "no-store, no-cache, must-revalidate"
-);
-
-response.set(
-    http::field::pragma,
-    "no-cache"
-);
-
-response.set(
     http::field::access_control_allow_origin,
     "*"
 );
@@ -327,8 +317,7 @@ const std::string& csv
     const std::string url =
         "https://raw.githubusercontent.com/"
         "Somyotthanimwas/FundamentalWeb/main/"
-        "data/fundamental_v4.csv?cache_bust=" +
-        std::to_string(std::time(nullptr));
+        "data/fundamental_v4.csv";
 
     const std::string tmp = csv + ".github.tmp";
 
