@@ -88,7 +88,7 @@ function App() {
         setLoading(true)
         setError('')
 
-        const response = await fetch(`${API_BASE_URL}/api/stocks`)
+        const response = await fetch(`${API_BASE_URL}/api/stocks?_=${Date.now()}`, {\n          cache: 'no-store',\n        })
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`)
