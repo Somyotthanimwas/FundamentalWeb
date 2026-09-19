@@ -104,16 +104,9 @@ return result;
 
 }
 
-std::vector<Stock> loadStocks(const std::string& filename) {
-std::ifstream file(filename);
-
-if (!file) {
-    throw std::runtime_error(
-        "Cannot open CSV: " + filename
-    );
-}
-
+std::vector<Stock> parseStocks(const std::string& csvText) {
 std::vector<Stock> stocks;
+std::istringstream file(csvText);
 std::string line;
 
 if (!std::getline(file, line)) {
@@ -131,7 +124,7 @@ while (std::getline(file, line)) {
         std::cerr
             << "Skipping invalid row: "
             << fields.size()
-            << " fields\n";
+            << " fields\\n";
 
         continue;
     }
@@ -160,8 +153,20 @@ while (std::getline(file, line)) {
 }
 
 return stocks;
+}
 
+std::vector<Stock> loadStocks(const std::string& filename) {
+std::ifstream file(filename);
 
+if (!file) {
+    throw std::runtime_error(
+        "Cannot open CSV: " + filename
+    );
+}
+
+std::ostringstream content;
+content << file.rdbuf();
+return parseStocks(content.str());
 }
 
 std::string stockToJson(const Stock& s) {
@@ -321,6 +326,21 @@ try {
 }
 
 
+bool uploadTokenMatches(const http::request<http::string_body>& request) {
+const char* expected = std::getenv("CSV_UPLOAD_TOKEN");
+
+if (!expected || std::string(expected).empty()) {
+    return false;
+}
+
+const auto it = request.find("X-Upload-Token");
+if (it == request.end()) {
+    return false;
+}
+
+return it->value() == expected;
+}
+
 http::response<http::string_body> handleRequest(
 const http::request<http::string_body>& request,
 std::vector<Stock>& stocks,
@@ -336,6 +356,87 @@ http::status::no_content,
 );
 }
 
+
+if (request.method() == http::verb::post &&
+    request.target() == "/api/upload-csv") {
+
+    if (!uploadTokenMatches(request)) {
+        return makeResponse(
+            request,
+            http::status::unauthorized,
+            R"({"status":"error","message":"Unauthorized"})"
+        );
+    }
+
+    if (request.body().empty()) {
+        return makeResponse(
+            request,
+            http::status::bad_request,
+            R"({"status":"error","message":"CSV body is empty"})"
+        );
+    }
+
+    try {
+        auto newStocks = parseStocks(request.body());
+
+        if (newStocks.empty()) {
+            return makeResponse(
+                request,
+                http::status::bad_request,
+                R"({"status":"error","message":"CSV contains no valid rows"})"
+            );
+        }
+
+        const auto aotIt = std::find_if(
+            newStocks.begin(),
+            newStocks.end(),
+            [](const Stock& stock) { return stock.symbol == "AOT"; }
+        );
+
+        if (aotIt == newStocks.end()) {
+            return makeResponse(
+                request,
+                http::status::bad_request,
+                R"({"status":"error","message":"AOT not found in CSV"})"
+            );
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(dataMutex);
+            stocks = std::move(newStocks);
+        }
+
+        std::cout
+            << "DIRECT CSV UPLOAD: stocks=" << stocks.size()
+            << ", AOT last=" << aotIt->last
+            << ", volume=" << aotIt->volume
+            << "\n";
+
+        std::ostringstream body;
+        body
+            << "{"
+            << "\"status\":\"ok\","
+            << "\"stocks\":" << stocks.size() << ","
+            << "\"aotLast\":\"" << escapeJson(aotIt->last) << "\","
+            << "\"aotVolume\":\"" << escapeJson(aotIt->volume) << "\""
+            << "}";
+
+        return makeResponse(
+            request,
+            http::status::ok,
+            body.str()
+        );
+
+    } catch (const std::exception& error) {
+        return makeResponse(
+            request,
+            http::status::bad_request,
+            std::string(R"({"status":"error","message":")") +
+            escapeJson(error.what()) +
+            "\"}"
+        );
+    }
+}
 
 if (request.method() == http::verb::post &&
     request.target() == "/api/reload") {
