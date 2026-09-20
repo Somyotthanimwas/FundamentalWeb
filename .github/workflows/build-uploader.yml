@@ -30,7 +30,7 @@ jobs:
           cmake --build tools/FundamentalWebUploader/build --config Release
 
       - name: Upload EXE artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: FundamentalWebUploader-Windows-x64
           path: tools/FundamentalWebUploader/build/Release/FundamentalWebUploader.exe
